@@ -17,6 +17,8 @@
 #   INSTALL_WP_CLI   set to 1 to install wp-cli.phar to /usr/local/bin/wp
 #   CREATE_SWAP      set to 0 to skip; default 1 — on hosts with <2GiB RAM, create 2G /swapfile
 #                    if none active (avoids OOM during npm ci / Next build on small droplets)
+#   NEXT_PUBLIC_WORDPRESS_URL  optional; same as GitHub Actions (site base URL). Footer hints only;
+#                    default http://157.230.146.199
 
 set -euo pipefail
 
@@ -210,10 +212,17 @@ echo "WordPress files:     $WP_ROOT  (sync repo app/public here or wp core downl
 echo "MySQL database:      $WP_DB_NAME / user $WP_DB_USER"
 echo "Frontend repo path:  $FRONTEND_ROOT"
 echo ""
-echo "Public URLs (IP-only):"
-echo "  Faust (primary):    http://157.230.146.199/"
-echo "  Faust (alternate):  http://157.230.146.199:8080/"
-echo "  WordPress admin:    http://157.230.146.199/wp-admin/"
+NEXT_PUBLIC_WORDPRESS_URL="${NEXT_PUBLIC_WORDPRESS_URL:-http://157.230.146.199}"
+WP_PUBLIC="${NEXT_PUBLIC_WORDPRESS_URL%/}"
+_scheme="${WP_PUBLIC%%://*}"
+_rest="${WP_PUBLIC#*://}"
+_hostpath="${_rest%%/*}"
+_hostonly="${_hostpath%%:*}"
+WP_ALT="${_scheme}://${_hostonly}:8080"
+echo "Public URLs (NEXT_PUBLIC_WORDPRESS_URL=${NEXT_PUBLIC_WORDPRESS_URL}):"
+echo "  Faust (primary):    ${WP_PUBLIC}/"
+echo "  Faust (alternate):  ${WP_ALT}/"
+echo "  WordPress admin:    ${WP_PUBLIC}/wp-admin/"
 echo ""
 echo "Production: set GitHub variable NEXT_PUBLIC_WORDPRESS_URL and store canonical wp-config at"
 echo "  /etc/mowby-wines/wp-config.php (optional; see .github/workflows/deploy.yml)."
