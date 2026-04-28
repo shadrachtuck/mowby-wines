@@ -1,0 +1,128 @@
+# Deploy Next.js (Faust) frontend to a VPS over SSH.
+#
+# Required GitHub Actions *secrets* (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST       — server hostname or IP
+#   DEPLOY_USER       — SSH user (e.g. root or a dedicated deploy user)
+#   DEPLOY_SSH_KEY    — private key (full PEM) whose public key is in ~/.ssh/authorized_keys on the server
+#   FAUST_SECRET_KEY  — must match WordPress → Faust plugin → Settings → Headless
+#
+# Required repository *variables*:
+#   NEXT_PUBLIC_WORDPRESS_URL — WordPress base URL (e.g. http://YOUR_IP), not a :8080-only Next URL.
+#
+# Optional repository *variables*:
+#   DEPLOY_PATH — absolute path to the repo on the server (default below).
+#   WP_CONFIG_PATH — if WordPress wp-config.php is not at $DEPLOY_PATH/app/public/wp-config.php,
+#                     set this to its absolute path on the server (backup/restore uses it).
+#   WP_CONFIG_CANONICAL — optional absolute path to the real wp-config.php (e.g.
+#       /etc/mowby-wines/wp-config.php). If that file exists, it is copied after git checkout
+#       so production DB credentials are never only in git. If unset, the same path is used when
+#       present: /etc/mowby-wines/wp-config.php
+#
+# If npm ci exits 137 / "Killed": the server likely ran out of RAM (OOM). This workflow
+# enables a 2G swapfile when running as root on <2GiB RAM (idempotent). Or run scripts/setup-server.sh
+# (CREATE_SWAP=1) or resize the droplet.
+
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy.yml'
+      - '.gitignore'
+      - 'app/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mowby-frontend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          FAUST_SECRET_KEY: ${{ secrets.FAUST_SECRET_KEY }}
+          NEXT_PUBLIC_WORDPRESS_URL: ${{ vars.NEXT_PUBLIC_WORDPRESS_URL }}
+          WP_CONFIG_PATH: ${{ vars.WP_CONFIG_PATH }}
+          WP_CONFIG_CANONICAL: ${{ vars.WP_CONFIG_CANONICAL }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          command_timeout: 40m
+          envs: FAUST_SECRET_KEY,NEXT_PUBLIC_WORDPRESS_URL,WP_CONFIG_PATH,WP_CONFIG_CANONICAL
+          script: |
+            set -euo pipefail
+            DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
+            if [ -z "$DEPLOY_PATH" ]; then
+              DEPLOY_PATH="/var/www/mowby-wines"
+            fi
+            if [ -z "${NEXT_PUBLIC_WORDPRESS_URL:-}" ]; then
+              echo "Set repository variable NEXT_PUBLIC_WORDPRESS_URL to your WordPress URL (e.g. http://YOUR_IP), not the :8080-only Next URL." >&2
+              exit 1
+            fi
+            if [ "$(id -u)" -eq 0 ]; then
+              MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+              if [ "${MEM_KB:-0}" -lt 2097152 ] && ! swapon --show 2>/dev/null | grep -q '/swapfile'; then
+                if [ ! -f /swapfile ]; then
+                  fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+                  chmod 600 /swapfile
+                  mkswap /swapfile
+                fi
+                swapon /swapfile
+                grep -q '^/swapfile' /etc/fstab 2>/dev/null || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+              fi
+            fi
+            if [ -n "${WP_CONFIG_PATH:-}" ]; then
+              WPCONF="$WP_CONFIG_PATH"
+            else
+              WPCONF="${DEPLOY_PATH}/app/public/wp-config.php"
+            fi
+            WPCONF_BAK="$(mktemp /tmp/mowby-wp-config.XXXXXX)"
+            HAD_WPCONF=0
+            if [ -f "$WPCONF" ]; then
+              HAD_WPCONF=1
+              cp -a "$WPCONF" "$WPCONF_BAK"
+            fi
+            cd "$DEPLOY_PATH"
+            git fetch origin main
+            git checkout -B main origin/main
+            CANONICAL="${WP_CONFIG_CANONICAL:-}"
+            if [ -z "$CANONICAL" ] && [ -f /etc/mowby-wines/wp-config.php ]; then
+              CANONICAL=/etc/mowby-wines/wp-config.php
+            fi
+            if [ -n "$CANONICAL" ] && [ -f "$CANONICAL" ]; then
+              mkdir -p "$(dirname "$WPCONF")"
+              cp -a "$CANONICAL" "$WPCONF"
+              rm -f "$WPCONF_BAK"
+              if ! grep -q 'DB_NAME' "$WPCONF"; then
+                echo "Canonical wp-config at $CANONICAL did not produce a valid $WPCONF (missing DB_NAME)." >&2
+                exit 1
+              fi
+            elif [ "$HAD_WPCONF" -eq 1 ]; then
+              cp -a "$WPCONF_BAK" "$WPCONF"
+              rm -f "$WPCONF_BAK"
+              if ! grep -q 'DB_NAME' "$WPCONF"; then
+                echo "Restored wp-config.php at $WPCONF does not look valid (missing DB_NAME)." >&2
+                exit 1
+              fi
+            else
+              rm -f "$WPCONF_BAK"
+            fi
+            {
+              printf '%s\n' "FAUST_SECRET_KEY=${FAUST_SECRET_KEY}"
+              printf '%s\n' "NEXT_PUBLIC_WORDPRESS_URL=${NEXT_PUBLIC_WORDPRESS_URL}"
+            } > frontend/.env.local
+            cd frontend
+            export NPM_CONFIG_MAXSOCKETS=5
+            npm ci --no-audit --no-fund
+            npm run build -- --skip-health-checks
+            pm2 delete mowby-frontend 2>/dev/null || true
+            pm2 start npm --name mowby-frontend --cwd "$DEPLOY_PATH/frontend" -- start -- --skip-health-checks
+            pm2 save

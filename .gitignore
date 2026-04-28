@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+
+# Frontend env and build (never commit production secrets)
+frontend/.env
+frontend/.env.*
+!frontend/.env.local.sample
+
+# WordPress — production DB credentials and dumps
+app/public/wp-config.php
+app/sql/*.sql
+
+# Node / Next (if tooling runs from repo root)
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/

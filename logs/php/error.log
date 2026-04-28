@@ -1,0 +1,2 @@
+[15-Apr-2026 23:24:49 UTC] PHP Warning:  Attempt to read property "post_status" on null in /Users/shadrachtuck/Projects/Local Sites/mowby-wines/app/public/wp-admin/includes/template.php on line 812
+[15-Apr-2026 23:24:49 UTC] PHP Warning:  Attempt to read property "post_date" on null in /Users/shadrachtuck/Projects/Local Sites/mowby-wines/app/public/wp-admin/includes/template.php on line 820

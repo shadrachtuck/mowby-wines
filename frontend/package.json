@@ -1,0 +1,47 @@
+{
+  "name": "mowby-wines-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "faust dev",
+    "build": "faust build",
+    "generate": "faust generatePossibleTypes",
+    "stylesheet": "faust generateGlobalStylesheet",
+    "start": "faust start"
+  },
+  "dependencies": {
+    "@apollo/client": "3.14.1",
+    "@faustwp/cli": "^3.1.1",
+    "@faustwp/core": "^3.1.0",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@wordpress/base-styles": "^5.10.0",
+    "@wordpress/block-library": "^9.10.0",
+    "class-variance-authority": "^0.7.1",
+    "classnames": "^2.5.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.11.0",
+    "graphql": "^16.8.1",
+    "lucide-react": "^0.487.0",
+    "next": "^14.2.15",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sass": "^1.77.3",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "next-secure-headers": "^2.2.0",
+    "tailwindcss": "^3.4.14"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "overrides": {
+    "react-autosize-textarea": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    }
+  }
+}

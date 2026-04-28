@@ -1,0 +1,207 @@
+{
+	"key": "group_mowby_about",
+	"title": "Page — About (Mowby)",
+	"fields": [
+		{
+			"key": "field_mowby_about_our_story",
+			"label": "Our Story",
+			"name": "ourStory",
+			"type": "group",
+			"instructions": "Two-column block: text left, image right.",
+			"required": 0,
+			"conditional_logic": 0,
+			"wrapper": { "width": "", "class": "", "id": "" },
+			"layout": "block",
+			"sub_fields": [
+				{
+					"key": "field_mowby_about_story_heading",
+					"label": "Heading",
+					"name": "heading",
+					"type": "text",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "Our Story",
+					"maxlength": "",
+					"placeholder": "",
+					"prepend": "",
+					"append": ""
+				},
+				{
+					"key": "field_mowby_about_story_body",
+					"label": "Body",
+					"name": "body",
+					"type": "wysiwyg",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "<p><strong><em>Mowby Wines</em></strong> is named in honor of my late father, Mowbray Davidson.</p><p>A philosopher and friend to all, he cherished connection, building relationships, and, most of all, being out on the river with a fishing pole.</p><p>My dad's love for people and community is exactly what I love most about wine; it brings people together, sparks conversation, and creates memories that last far beyond the final sip.</p><p>My passion for wine began years ago during a harvest in South Africa, where I developed my first crush on wine. I'm thrilled to now share my very first crush with you!</p>",
+					"tabs": "all",
+					"toolbar": "full",
+					"media_upload": 1,
+					"delay": 0
+				},
+				{
+					"key": "field_mowby_about_story_image",
+					"label": "Image (right column)",
+					"name": "image",
+					"type": "image",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"return_format": "array",
+					"library": "all",
+					"preview_size": "medium",
+					"min_width": "",
+					"min_height": "",
+					"min_size": "",
+					"max_width": "",
+					"max_height": "",
+					"max_size": "",
+					"mime_types": "jpg,jpeg,png,webp"
+				}
+			]
+		},
+		{
+			"key": "field_mowby_about_winemaking",
+			"label": "Winemaking philosophy",
+			"name": "winemakingPhilosophy",
+			"type": "group",
+			"instructions": "Centered section with optional illustration below.",
+			"required": 0,
+			"conditional_logic": 0,
+			"wrapper": { "width": "", "class": "", "id": "" },
+			"layout": "block",
+			"sub_fields": [
+				{
+					"key": "field_mowby_about_phil_heading",
+					"label": "Heading",
+					"name": "heading",
+					"type": "text",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "Our Winemaking Philosophy",
+					"maxlength": "",
+					"placeholder": "",
+					"prepend": "",
+					"append": ""
+				},
+				{
+					"key": "field_mowby_about_phil_body",
+					"label": "Body",
+					"name": "body",
+					"type": "wysiwyg",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "<p>Our mission is to craft low-alcohol, youthful, and approachable wines that can be enjoyed on any occasion. We champion sustainability through a low-intervention winemaking approach, sourcing fruit from organic vineyards to create high-quality natural wines that let the terroir, fruit, and varietal characteristics shine. Our ingredients are simple: organic grapes, naturally occurring fermentations, small additions of sulfur dioxide for stability, and plenty of love.</p>",
+					"tabs": "all",
+					"toolbar": "full",
+					"media_upload": 1,
+					"delay": 0
+				},
+				{
+					"key": "field_mowby_about_phil_image",
+					"label": "Illustration / image",
+					"name": "image",
+					"type": "image",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"return_format": "array",
+					"library": "all",
+					"preview_size": "medium",
+					"min_width": "",
+					"min_height": "",
+					"min_size": "",
+					"max_width": "",
+					"max_height": "",
+					"max_size": "",
+					"mime_types": "jpg,jpeg,png,webp"
+				}
+			]
+		},
+		{
+			"key": "field_mowby_about_founder",
+			"label": "Founder",
+			"name": "founder",
+			"type": "group",
+			"instructions": "Portrait left, biography right (mirrors Our Story layout).",
+			"required": 0,
+			"conditional_logic": 0,
+			"wrapper": { "width": "", "class": "", "id": "" },
+			"layout": "block",
+			"sub_fields": [
+				{
+					"key": "field_mowby_about_founder_image",
+					"label": "Portrait",
+					"name": "image",
+					"type": "image",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"return_format": "array",
+					"library": "all",
+					"preview_size": "medium",
+					"min_width": "",
+					"min_height": "",
+					"min_size": "",
+					"max_width": "",
+					"max_height": "",
+					"max_size": "",
+					"mime_types": "jpg,jpeg,png,webp"
+				},
+				{
+					"key": "field_mowby_about_founder_body",
+					"label": "Biography",
+					"name": "body",
+					"type": "wysiwyg",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "<p>My name is Emma, and I'm the Owner and Winemaker behind <strong>Mowby Wines</strong> (with a big army of friends and family supporting me every step along the way). I was born and raised in Idaho, spending 20 of my 25 years in this wonderful state. I left to pursue a degree at Montana State University, and after graduating, I joined the nonprofit World Wide Opportunities on Organic Farms (WWOOF) to pursue my love of travel, working abroad on small sustainable farms. Somewhere along the way, I found myself at my first wine harvest in South Africa, and I completely fell in love with the world of wine!</p><p>After a year abroad, I missed Idaho more than ever and returned to my roots, eager to wiggle my way into the Idaho Wine Industry. That path led me to the 3100 Cellars team, Idaho's first and only sparkling winery, where I've been able to learn, grow, pursue an education in Enology through Washington State University, and continue harvesting abroad whenever the chance arises!</p><p>This year, I took a big leap and decided to make my first wine. And with it, Mowby Wines was born! I can't wait to share my first wine with you!</p>",
+					"tabs": "all",
+					"toolbar": "full",
+					"media_upload": 1,
+					"delay": 0
+				},
+				{
+					"key": "field_mowby_about_founder_signature",
+					"label": "Signature line",
+					"name": "signature",
+					"type": "text",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "~Emma Davidson, Founder",
+					"maxlength": "",
+					"placeholder": "",
+					"prepend": "",
+					"append": ""
+				}
+			]
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "mowby_page_slug",
+				"operator": "==",
+				"value": "about"
+			}
+		]
+	],
+	"menu_order": 1,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"hide_on_screen": "",
+	"active": true,
+	"description": "About page: Our Story, Winemaking Philosophy, Founder.",
+	"show_in_rest": 1,
+	"show_in_graphql": 1,
+	"graphql_field_name": "mowbyAbout",
+	"modified": 1777150200
+}

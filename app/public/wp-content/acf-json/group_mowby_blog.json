@@ -1,0 +1,109 @@
+{
+	"key": "group_mowby_blog",
+	"title": "Page — Blog / Journal (Mowby)",
+	"fields": [
+		{
+			"key": "field_mowby_blog_header",
+			"label": "Journal header",
+			"name": "journalHeader",
+			"type": "group",
+			"instructions": "Title area above the post grid (posts still load from WordPress).",
+			"required": 0,
+			"conditional_logic": 0,
+			"wrapper": { "width": "", "class": "", "id": "" },
+			"layout": "block",
+			"sub_fields": [
+				{
+					"key": "field_mowby_blog_title",
+					"label": "Title",
+					"name": "title",
+					"type": "text",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "Wine Journal",
+					"maxlength": "",
+					"placeholder": "",
+					"prepend": "",
+					"append": ""
+				},
+				{
+					"key": "field_mowby_blog_subtitle",
+					"label": "Subtitle",
+					"name": "subtitle",
+					"type": "textarea",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "Stories and insights from Mowby Wines",
+					"maxlength": "",
+					"rows": 2,
+					"placeholder": "",
+					"new_lines": "br"
+				}
+			]
+		},
+		{
+			"key": "field_mowby_blog_notice",
+			"label": "Footer notice card",
+			"name": "footerNotice",
+			"type": "group",
+			"instructions": "“More articles coming soon” card below the grid.",
+			"required": 0,
+			"conditional_logic": 0,
+			"wrapper": { "width": "", "class": "", "id": "" },
+			"layout": "block",
+			"sub_fields": [
+				{
+					"key": "field_mowby_blog_notice_heading",
+					"label": "Heading",
+					"name": "heading",
+					"type": "text",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "More Articles Coming Soon",
+					"maxlength": "",
+					"placeholder": "",
+					"prepend": "",
+					"append": ""
+				},
+				{
+					"key": "field_mowby_blog_notice_body",
+					"label": "Body",
+					"name": "body",
+					"type": "textarea",
+					"required": 0,
+					"conditional_logic": 0,
+					"wrapper": { "width": "", "class": "", "id": "" },
+					"default_value": "We're constantly adding new content. Subscribe to our newsletter to stay updated with the latest wine insights and stories.",
+					"maxlength": "",
+					"rows": 4,
+					"placeholder": "",
+					"new_lines": "br"
+				}
+			]
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "mowby_page_slug",
+				"operator": "==",
+				"value": "blog"
+			}
+		]
+	],
+	"menu_order": 4,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"hide_on_screen": "",
+	"active": true,
+	"description": "Intro/footer copy for the Faust /blog page. Post listings use WPGraphQL posts query.",
+	"show_in_rest": 1,
+	"show_in_graphql": 1,
+	"graphql_field_name": "mowbyBlog",
+	"modified": 1777000800
+}

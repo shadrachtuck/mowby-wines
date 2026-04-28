@@ -1,0 +1,12 @@
+/*
+Theme Name: Mowby Wines
+Theme URI: https://mowbywines.com
+Author: Mowby Wines
+Description: Child theme for headless Faust.js — registers ACF “Mowby page slug” location rules. Frontend is Next.js.
+Template: twentytwentyfive
+Requires at least: 6.7
+Version: 1.1.0
+Text Domain: mowby-wines
+*/
+
+/* Intentionally minimal; layout lives in the Next.js app. */
