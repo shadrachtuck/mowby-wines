@@ -8,7 +8,8 @@
 # Host for SSH (set at least one):
 #   secrets.DEPLOY_HOST  — preferred for hostname/IP, or
 #   vars.DEPLOY_HOST     — same value as a non-secret variable (fine for a droplet IP), or
-#   vars.NEXT_PUBLIC_WORDPRESS_URL alone — host is derived (scheme/port/path stripped) if both are unset.
+#   vars.NEXT_PUBLIC_WORDPRESS_URL alone — host is derived (scheme/port/path stripped) if both are unset, or
+#   workflow_dispatch inputs ssh_host / wordpress_url — one-off overrides when running the workflow manually.
 #
 # Required repository *variables*:
 #   NEXT_PUBLIC_WORDPRESS_URL — WordPress base URL (e.g. http://YOUR_IP), not a :8080-only Next URL.
@@ -37,6 +38,15 @@ on:
       - '.gitignore'
       - 'app/**'
   workflow_dispatch:
+    inputs:
+      ssh_host:
+        description: "SSH host (IP or DNS). Use when repository variables are not wired yet."
+        required: false
+        default: ""
+      wordpress_url:
+        description: "Optional NEXT_PUBLIC_WORDPRESS_URL for this run only (e.g. http://x.x.x.x)."
+        required: false
+        default: ""
 
 concurrency:
   group: deploy-mowby-frontend
@@ -53,9 +63,62 @@ jobs:
           SECRET_HOST: ${{ secrets.DEPLOY_HOST }}
           VAR_DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           WP_URL: ${{ vars.NEXT_PUBLIC_WORDPRESS_URL }}
+          DISPATCH_SSH: ${{ github.event.inputs.ssh_host || '' }}
+          DISPATCH_WP: ${{ github.event.inputs.wordpress_url || '' }}
+          GITHUB_EVENT: ${{ github.event_name }}
+          GITHUB_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          H="${SECRET_HOST:-}"
+          #region agent log
+          mkdir -p "$GITHUB_WORKSPACE/.cursor"
+          _log="$GITHUB_WORKSPACE/.cursor/debug-738f4f.log"
+          python3 - << PY
+          import json, os, time
+          log_path = os.path.join(os.environ["GITHUB_WORKSPACE"], ".cursor", "debug-738f4f.log")
+          os.makedirs(os.path.dirname(log_path), exist_ok=True)
+          data = {
+            "sessionId": "738f4f",
+            "timestamp": int(time.time() * 1000),
+            "hypothesisId": "H1-H5",
+            "location": "deploy.yml:Resolve SSH host",
+            "message": "source lengths; 0 len on vars.* often means Environment-only vars without job environment:",
+            "data": {
+              "event": os.environ.get("GITHUB_EVENT", ""),
+              "repo": os.environ.get("GITHUB_REPO", ""),
+              "secret_deploy_host_len": len(os.environ.get("SECRET_HOST", "")),
+              "var_deploy_host_len": len(os.environ.get("VAR_DEPLOY_HOST", "")),
+              "var_wp_url_len": len(os.environ.get("WP_URL", "")),
+              "dispatch_ssh_len": len(os.environ.get("DISPATCH_SSH", "")),
+              "dispatch_wp_len": len(os.environ.get("DISPATCH_WP", "")),
+            },
+          }
+          line = json.dumps(data)
+          with open(log_path, "a") as f:
+            f.write(line + "\n")
+          print("AGENT_DEBUG_738f4f " + line, flush=True)
+          PY
+          _slen="${#SECRET_HOST}"
+          _vlen="${#VAR_DEPLOY_HOST}"
+          _wlen="${#WP_URL}"
+          _dlen="${#DISPATCH_SSH}"
+          _pwlen="${#DISPATCH_WP}"
+          {
+            echo "## Debug 738f4f: SSH host resolution"
+            echo "| Source | char length |"
+            echo "|--------|------------|"
+            echo "| secrets.DEPLOY_HOST | ${_slen} (hidden) |"
+            echo "| vars.DEPLOY_HOST | ${_vlen} |"
+            echo "| vars.NEXT_PUBLIC_WORDPRESS_URL | ${_wlen} |"
+            echo "| workflow_dispatch ssh_host | ${_dlen} |"
+            echo "| workflow_dispatch wordpress_url | ${_pwlen} |"
+            echo ""
+            echo "If \`vars.*\` lengths are 0 but you set values under **Environments**, add \`environment: <name>\` to this job or move variables to **Repository** variables."
+          } >> "$GITHUB_STEP_SUMMARY"
+          #endregion
+          H="${DISPATCH_SSH:-}"
+          if [ -z "$H" ]; then
+            H="${SECRET_HOST:-}"
+          fi
           if [ -z "$H" ]; then
             H="${VAR_DEPLOY_HOST:-}"
           fi
@@ -68,17 +131,27 @@ jobs:
               H="${H%%:*}"
             fi
           fi
+          WP_EFFECTIVE="${WP_URL:-}"
+          if [ -z "$WP_EFFECTIVE" ] && [ -n "${DISPATCH_WP:-}" ]; then
+            WP_EFFECTIVE="${DISPATCH_WP}"
+          fi
           if [ -z "$H" ]; then
-            echo 'Set secrets.DEPLOY_HOST or vars.DEPLOY_HOST (or vars.NEXT_PUBLIC_WORDPRESS_URL so the host can be derived).' >&2
+            echo 'Set secrets.DEPLOY_HOST or vars.DEPLOY_HOST (or vars.NEXT_PUBLIC_WORDPRESS_URL so the host can be derived), or run workflow_dispatch with ssh_host.' >&2
             exit 1
           fi
           echo "host=$H" >> "$GITHUB_OUTPUT"
+          {
+            echo "wordpress_url_effective<<__WP_EOF__"
+            printf '%s' "$WP_EFFECTIVE"
+            echo ""
+            echo "__WP_EOF__"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
           FAUST_SECRET_KEY: ${{ secrets.FAUST_SECRET_KEY }}
-          NEXT_PUBLIC_WORDPRESS_URL: ${{ vars.NEXT_PUBLIC_WORDPRESS_URL }}
+          NEXT_PUBLIC_WORDPRESS_URL: ${{ steps.resolve.outputs.wordpress_url_effective != '' && steps.resolve.outputs.wordpress_url_effective || vars.NEXT_PUBLIC_WORDPRESS_URL }}
           WP_CONFIG_PATH: ${{ vars.WP_CONFIG_PATH }}
           WP_CONFIG_CANONICAL: ${{ vars.WP_CONFIG_CANONICAL }}
         with:
@@ -157,3 +230,11 @@ jobs:
             pm2 delete mowby-frontend 2>/dev/null || true
             pm2 start npm --name mowby-frontend --cwd "$DEPLOY_PATH/frontend" -- start -- --skip-health-checks
             pm2 save
+
+      - name: Upload agent debug log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-session-738f4f
+          path: .cursor/debug-738f4f.log
+          if-no-files-found: ignore

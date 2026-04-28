@@ -1,3 +1,0 @@
-{"sessionId":"738f4f","hypothesisId":"H1","location":"pages/_app.js:MyApp","message":"MyApp render","data":{"asPath":"/shop","isReady":false,"ssr":true},"timestamp":1777064801077,"runId":"verify"}
-{"sessionId":"738f4f","hypothesisId":"H1","location":"pages/_app.js:MyApp","message":"MyApp render","data":{"asPath":"/shop","isReady":true,"ssr":false},"timestamp":1777064801425,"runId":"verify"}
-{"sessionId":"738f4f","hypothesisId":"H1","location":"pages/_app.js:MyApp","message":"MyApp render","data":{"asPath":"/shop","isReady":true,"ssr":false},"timestamp":1777064801426,"runId":"verify"}
