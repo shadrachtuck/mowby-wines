@@ -1,6 +1,6 @@
 import classNames from 'classnames/bind';
-import Container from '../Container';
-import NavigationMenu from '../NavigationMenu';
+import { Container } from '../Container';
+import { NavigationMenu } from '../NavigationMenu';
 import styles from './Footer.module.scss';
 
 let cx = classNames.bind(styles);

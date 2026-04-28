@@ -8,8 +8,7 @@
 #   bash scripts/setup-server.sh
 #
 # Optional environment:
-#   WP_ROOT          WordPress docroot (default: /var/www/wordpress). For this repo use
-#                    .../mowby-wines/app/public so port 80 can proxy / to Next.
+#   WP_ROOT          WordPress docroot (default: $FRONTEND_ROOT/app/public). Override only if needed.
 #   WP_DB_NAME       (default: wordpress)
 #   WP_DB_USER       (default: wordpress)
 #   WP_DB_PASS       if unset, a random password is generated and printed once
@@ -22,8 +21,8 @@
 
 set -euo pipefail
 
-WP_ROOT="${WP_ROOT:-/var/www/wordpress}"
 FRONTEND_ROOT="${FRONTEND_ROOT:-/var/www/mowby-wines}"
+WP_ROOT="${WP_ROOT:-$FRONTEND_ROOT/app/public}"
 WP_DB_NAME="${WP_DB_NAME:-wordpress}"
 WP_DB_USER="${WP_DB_USER:-wordpress}"
 INSTALL_WP_CLI="${INSTALL_WP_CLI:-0}"
@@ -117,6 +116,7 @@ FLUSH PRIVILEGES;
 SQL
 
 echo "==> nginx: port 80 — Next.js (Faust) for / ; WordPress for admin, REST, GraphQL, assets"
+echo "    (WordPress root = $WP_ROOT — must match repo app/public so /index.php?graphql is not 404)"
 install -d /etc/nginx/sites-available /etc/nginx/sites-enabled
 cat > /etc/nginx/sites-available/mowby-wines-wordpress <<NGINX
 # Public site is the Faust app (PM2 :3000). WordPress serves /wp-json, /graphql, /wp-admin, etc.
@@ -135,10 +135,17 @@ server {
         deny all;
     }
 
-    location ~ \\.php\$ {
+    # Explicit index.php so GraphQL (?graphql) and front controller always map to a real file on disk.
+    location = /index.php {
         include fastcgi.conf;
         fastcgi_pass unix:${PHP_SOCK};
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME \$document_root/index.php;
+    }
+
+    location ~ \\.php\$ {
+        try_files \$uri =404;
+        include fastcgi.conf;
+        fastcgi_pass unix:${PHP_SOCK};
     }
 
     location /wp-admin {

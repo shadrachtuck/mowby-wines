@@ -126,8 +126,12 @@ jobs:
             if [ -z "$DEPLOY_PATH" ]; then
               DEPLOY_PATH="/var/www/mowby-wines"
             fi
-            if [ -z "${NEXT_PUBLIC_WORDPRESS_URL:-}" ]; then
-              echo "Set repository variable NEXT_PUBLIC_WORDPRESS_URL to your WordPress URL (e.g. http://YOUR_IP), not the :8080-only Next URL." >&2
+            NEXT_PUBLIC_WORDPRESS_URL="$(
+              printf '%s' "${NEXT_PUBLIC_WORDPRESS_URL:-}" |
+                sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/\/\+$//'
+            )"
+            if [ -z "$NEXT_PUBLIC_WORDPRESS_URL" ]; then
+              echo "Set repository variable NEXT_PUBLIC_WORDPRESS_URL to your WordPress URL (e.g. http://YOUR_IP), not the :8080-only Next URL. Avoid leading/trailing spaces." >&2
               exit 1
             fi
             if [ "$(id -u)" -eq 0 ]; then
