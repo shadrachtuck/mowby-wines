@@ -23,6 +23,10 @@
 #       so production DB credentials are never only in git. If unset, the same path is used when
 #       present: /etc/mowby-wines/wp-config.php
 #
+# First-time server: DEPLOY_PATH may not exist yet. The deploy script creates it and clones this
+# repository using the workflow GITHUB_TOKEN (HTTPS). Ensure Actions → Workflow permissions allow
+# read access to contents for private repos.
+#
 # If npm ci exits 137 / "Killed": the server likely ran out of RAM (OOM). This workflow
 # enables a 2G swapfile when running as root on <2GiB RAM (idempotent). Or run scripts/setup-server.sh
 # (CREATE_SWAP=1) or resize the droplet.
@@ -56,6 +60,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
     steps:
       - name: Resolve SSH host
         id: resolve
@@ -106,13 +112,14 @@ jobs:
           NEXT_PUBLIC_WORDPRESS_URL: ${{ steps.resolve.outputs.wordpress_url_effective != '' && steps.resolve.outputs.wordpress_url_effective || vars.NEXT_PUBLIC_WORDPRESS_URL }}
           WP_CONFIG_PATH: ${{ vars.WP_CONFIG_PATH }}
           WP_CONFIG_CANONICAL: ${{ vars.WP_CONFIG_CANONICAL }}
+          GIT_CLONE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         with:
           host: ${{ steps.resolve.outputs.host }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 40m
-          envs: FAUST_SECRET_KEY,NEXT_PUBLIC_WORDPRESS_URL,WP_CONFIG_PATH,WP_CONFIG_CANONICAL
+          envs: FAUST_SECRET_KEY,NEXT_PUBLIC_WORDPRESS_URL,WP_CONFIG_PATH,WP_CONFIG_CANONICAL,GIT_CLONE_URL
           script: |
             set -euo pipefail
             DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
@@ -146,7 +153,21 @@ jobs:
               HAD_WPCONF=1
               cp -a "$WPCONF" "$WPCONF_BAK"
             fi
+            PARENT="$(dirname "$DEPLOY_PATH")"
+            mkdir -p "$PARENT"
+            if [ ! -d "$DEPLOY_PATH/.git" ]; then
+              if [ -e "$DEPLOY_PATH" ]; then
+                if [ -d "$DEPLOY_PATH" ] && [ -z "$(ls -A "$DEPLOY_PATH" 2>/dev/null)" ]; then
+                  rmdir "$DEPLOY_PATH"
+                else
+                  echo "Refusing to clone: $DEPLOY_PATH exists and is not an empty git repo." >&2
+                  exit 1
+                fi
+              fi
+              git clone -b main --depth 1 "$GIT_CLONE_URL" "$DEPLOY_PATH"
+            fi
             cd "$DEPLOY_PATH"
+            git remote set-url origin "$GIT_CLONE_URL"
             git fetch origin main
             git checkout -B main origin/main
             CANONICAL="${WP_CONFIG_CANONICAL:-}"
