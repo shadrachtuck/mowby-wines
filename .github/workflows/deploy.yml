@@ -204,41 +204,55 @@ jobs:
               printf '%s\n' "NEXT_PUBLIC_WORDPRESS_URL=${NEXT_PUBLIC_WORDPRESS_URL}"
             } > frontend/.env.local
             WP_DOCROOT="${DEPLOY_PATH}/app/public"
-            if command -v wp >/dev/null 2>&1; then
-              if [ "$(id -u)" -eq 0 ]; then
-                WP_CLI=(wp --allow-root)
-              else
-                WP_CLI=(wp)
-              fi
-              if ! "${WP_CLI[@]}" core is-installed --path="$WP_DOCROOT" 2>/dev/null; then
-                echo "WordPress is not installed at $WP_DOCROOT (wp core is-installed returned false)." >&2
-                echo "Finish setup: valid wp-config.php, database, run the web installer or: wp core install ..." >&2
-                echo "Faust prerender needs WPGraphQL JSON, not the WordPress installer HTML." >&2
-                exit 1
-              fi
-            else
-              GQ_URL="${NEXT_PUBLIC_WORDPRESS_URL%/}/index.php?graphql"
+            GQ_URL="${NEXT_PUBLIC_WORDPRESS_URL%/}/index.php?graphql"
+            probe_graphql() {
               GQ_TMP="$(mktemp)"
               if ! curl -sS -m 45 -o "$GQ_TMP" -w '' -H 'Content-Type: application/json' \
                 -d '{"query":"{ __typename }"}' "$GQ_URL"; then
                 echo "Could not reach GraphQL at $GQ_URL (curl failed)." >&2
                 rm -f "$GQ_TMP"
-                exit 1
+                return 1
               fi
               if grep -qiE 'wp-core-ui|Welcome to WordPress\. Before getting started|<!DOCTYPE[[:space:]]+html' "$GQ_TMP" 2>/dev/null; then
                 echo "GraphQL URL returned WordPress installer HTML, not JSON. Install WordPress and WPGraphQL first." >&2
                 echo "URL was: $GQ_URL" >&2
                 rm -f "$GQ_TMP"
-                exit 1
+                return 1
               fi
               if ! grep -qE '"data"|"errors"' "$GQ_TMP" 2>/dev/null; then
                 echo "GraphQL response from $GQ_URL did not look like JSON. Body (first 500 chars):" >&2
                 head -c 500 "$GQ_TMP" >&2 || true
                 echo >&2
                 rm -f "$GQ_TMP"
-                exit 1
+                return 1
               fi
               rm -f "$GQ_TMP"
+              return 0
+            }
+            if command -v wp >/dev/null 2>&1; then
+              if [ "$(id -u)" -eq 0 ]; then
+                WP_CLI=(wp --allow-root)
+              else
+                WP_CLI=(wp)
+              fi
+              WP_DIAG="$(mktemp)"
+              if "${WP_CLI[@]}" core is-installed --path="$WP_DOCROOT" 2>"$WP_DIAG"; then
+                rm -f "$WP_DIAG"
+              else
+                echo "wp core is-installed failed for $WP_DOCROOT. wp-cli messages:" >&2
+                cat "$WP_DIAG" >&2 || true
+                rm -f "$WP_DIAG"
+                echo "Trying GraphQL probe at $GQ_URL (Faust build needs this to succeed)..." >&2
+                if ! probe_graphql; then
+                  echo "Fix wp-config.php + database + run wp-admin install or: wp core install ..." >&2
+                  exit 1
+                fi
+                echo "GraphQL probe OK; continuing deploy." >&2
+              fi
+            else
+              if ! probe_graphql; then
+                exit 1
+              fi
             fi
             cd frontend
             export NPM_CONFIG_MAXSOCKETS=5
