@@ -1,10 +1,14 @@
 # Deploy Next.js (Faust) frontend to a VPS over SSH.
 #
 # Required GitHub Actions *secrets* (Settings → Secrets and variables → Actions):
-#   DEPLOY_HOST       — server hostname or IP
 #   DEPLOY_USER       — SSH user (e.g. root or a dedicated deploy user)
 #   DEPLOY_SSH_KEY    — private key (full PEM) whose public key is in ~/.ssh/authorized_keys on the server
 #   FAUST_SECRET_KEY  — must match WordPress → Faust plugin → Settings → Headless
+#
+# Host for SSH (set at least one):
+#   secrets.DEPLOY_HOST  — preferred for hostname/IP, or
+#   vars.DEPLOY_HOST     — same value as a non-secret variable (fine for a droplet IP), or
+#   vars.NEXT_PUBLIC_WORDPRESS_URL alone — host is derived (scheme/port/path stripped) if both are unset.
 #
 # Required repository *variables*:
 #   NEXT_PUBLIC_WORDPRESS_URL — WordPress base URL (e.g. http://YOUR_IP), not a :8080-only Next URL.
@@ -43,6 +47,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Resolve SSH host
+        id: resolve
+        env:
+          SECRET_HOST: ${{ secrets.DEPLOY_HOST }}
+          VAR_DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          WP_URL: ${{ vars.NEXT_PUBLIC_WORDPRESS_URL }}
+        run: |
+          set -euo pipefail
+          H="${SECRET_HOST:-}"
+          if [ -z "$H" ]; then
+            H="${VAR_DEPLOY_HOST:-}"
+          fi
+          if [ -z "$H" ]; then
+            H="${WP_URL:-}"
+            if [ -n "$H" ]; then
+              H="${H#http://}"
+              H="${H#https://}"
+              H="${H%%/*}"
+              H="${H%%:*}"
+            fi
+          fi
+          if [ -z "$H" ]; then
+            echo 'Set secrets.DEPLOY_HOST or vars.DEPLOY_HOST (or vars.NEXT_PUBLIC_WORDPRESS_URL so the host can be derived).' >&2
+            exit 1
+          fi
+          echo "host=$H" >> "$GITHUB_OUTPUT"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -51,7 +82,7 @@ jobs:
           WP_CONFIG_PATH: ${{ vars.WP_CONFIG_PATH }}
           WP_CONFIG_CANONICAL: ${{ vars.WP_CONFIG_CANONICAL }}
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
+          host: ${{ steps.resolve.outputs.host }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
