@@ -1,15 +1,14 @@
-import { setConfig } from '@faustwp/core';
+import { setConfig, hooks } from '@faustwp/core';
 import templates from './wp-templates';
 import possibleTypes from './possibleTypes.json';
 
-// Faust's getWpUrl() uses lodash trim(..., '/') which does not remove spaces. A trailing space in
-// NEXT_PUBLIC_WORDPRESS_URL yields an invalid URL: "http://host /index.php?graphql".
-if (process.env.NEXT_PUBLIC_WORDPRESS_URL) {
-  process.env.NEXT_PUBLIC_WORDPRESS_URL = process.env.NEXT_PUBLIC_WORDPRESS_URL.trim().replace(
-    /\/+$/,
-    '',
-  );
-}
+// Do not assign to process.env.NEXT_PUBLIC_WORDPRESS_URL — Next inlines NEXT_PUBLIC_* as string
+// literals at build time, so reassignment becomes `"http://..." = ...` and breaks Terser/webpack.
+// Faust's getWpUrl() uses lodash trim(..., '/') which does not remove spaces; normalize here.
+hooks.addFilter('wpUrl', 'mowby-wines/normalize-base-url', (wpUrl) => {
+  if (!wpUrl || typeof wpUrl !== 'string') return wpUrl;
+  return wpUrl.trim().replace(/\/+$/, '');
+});
 
 /**
  * @type {import('@faustwp/core').FaustConfig}
