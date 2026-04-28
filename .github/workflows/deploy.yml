@@ -27,6 +27,9 @@
 # repository using the workflow GITHUB_TOKEN (HTTPS). Ensure Actions → Workflow permissions allow
 # read access to contents for private repos.
 #
+# WordPress must be fully installed (valid wp-config + DB + wp core install) and WPGraphQL active
+# before deploy: otherwise GraphQL returns installer HTML and Next static export fails.
+#
 # If npm ci exits 137 / "Killed": the server likely ran out of RAM (OOM). This workflow
 # enables a 2G swapfile when running as root on <2GiB RAM (idempotent). Or run scripts/setup-server.sh
 # (CREATE_SWAP=1) or resize the droplet.
@@ -200,6 +203,43 @@ jobs:
               printf '%s\n' "FAUST_SECRET_KEY=${FAUST_SECRET_KEY}"
               printf '%s\n' "NEXT_PUBLIC_WORDPRESS_URL=${NEXT_PUBLIC_WORDPRESS_URL}"
             } > frontend/.env.local
+            WP_DOCROOT="${DEPLOY_PATH}/app/public"
+            if command -v wp >/dev/null 2>&1; then
+              if [ "$(id -u)" -eq 0 ]; then
+                WP_CLI=(wp --allow-root)
+              else
+                WP_CLI=(wp)
+              fi
+              if ! "${WP_CLI[@]}" core is-installed --path="$WP_DOCROOT" 2>/dev/null; then
+                echo "WordPress is not installed at $WP_DOCROOT (wp core is-installed returned false)." >&2
+                echo "Finish setup: valid wp-config.php, database, run the web installer or: wp core install ..." >&2
+                echo "Faust prerender needs WPGraphQL JSON, not the WordPress installer HTML." >&2
+                exit 1
+              fi
+            else
+              GQ_URL="${NEXT_PUBLIC_WORDPRESS_URL%/}/index.php?graphql"
+              GQ_TMP="$(mktemp)"
+              if ! curl -sS -m 45 -o "$GQ_TMP" -w '' -H 'Content-Type: application/json' \
+                -d '{"query":"{ __typename }"}' "$GQ_URL"; then
+                echo "Could not reach GraphQL at $GQ_URL (curl failed)." >&2
+                rm -f "$GQ_TMP"
+                exit 1
+              fi
+              if grep -qiE 'wp-core-ui|Welcome to WordPress\. Before getting started|<!DOCTYPE[[:space:]]+html' "$GQ_TMP" 2>/dev/null; then
+                echo "GraphQL URL returned WordPress installer HTML, not JSON. Install WordPress and WPGraphQL first." >&2
+                echo "URL was: $GQ_URL" >&2
+                rm -f "$GQ_TMP"
+                exit 1
+              fi
+              if ! grep -qE '"data"|"errors"' "$GQ_TMP" 2>/dev/null; then
+                echo "GraphQL response from $GQ_URL did not look like JSON. Body (first 500 chars):" >&2
+                head -c 500 "$GQ_TMP" >&2 || true
+                echo >&2
+                rm -f "$GQ_TMP"
+                exit 1
+              fi
+              rm -f "$GQ_TMP"
+            fi
             cd frontend
             export NPM_CONFIG_MAXSOCKETS=5
             npm ci --no-audit --no-fund
