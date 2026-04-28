@@ -1,6 +1,0 @@
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":false},"timestamp":1777000254161,"runId":"post-fix"}
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":false},"timestamp":1777000254177,"runId":"post-fix"}
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":true},"timestamp":1777000254181,"runId":"post-fix"}
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":false},"timestamp":1777000352784,"runId":"post-fix"}
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":true},"timestamp":1777000849097,"runId":"post-fix"}
-{"sessionId":"1930bf","hypothesisId":"H1","location":"HarvestGallery.js:useEffect[isMd]","message":"breakpoint sync (useEffect, no useLayoutEffect SSR warning)","data":{"isMd":false},"timestamp":1777002585937,"runId":"post-fix"}
