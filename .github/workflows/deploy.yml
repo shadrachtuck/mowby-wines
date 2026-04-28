@@ -65,56 +65,8 @@ jobs:
           WP_URL: ${{ vars.NEXT_PUBLIC_WORDPRESS_URL }}
           DISPATCH_SSH: ${{ github.event.inputs.ssh_host || '' }}
           DISPATCH_WP: ${{ github.event.inputs.wordpress_url || '' }}
-          GITHUB_EVENT: ${{ github.event_name }}
-          GITHUB_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          #region agent log
-          mkdir -p "$GITHUB_WORKSPACE/.cursor"
-          _log="$GITHUB_WORKSPACE/.cursor/debug-738f4f.log"
-          python3 - << PY
-          import json, os, time
-          log_path = os.path.join(os.environ["GITHUB_WORKSPACE"], ".cursor", "debug-738f4f.log")
-          os.makedirs(os.path.dirname(log_path), exist_ok=True)
-          data = {
-            "sessionId": "738f4f",
-            "timestamp": int(time.time() * 1000),
-            "hypothesisId": "H1-H5",
-            "location": "deploy.yml:Resolve SSH host",
-            "message": "source lengths; 0 len on vars.* often means Environment-only vars without job environment:",
-            "data": {
-              "event": os.environ.get("GITHUB_EVENT", ""),
-              "repo": os.environ.get("GITHUB_REPO", ""),
-              "secret_deploy_host_len": len(os.environ.get("SECRET_HOST", "")),
-              "var_deploy_host_len": len(os.environ.get("VAR_DEPLOY_HOST", "")),
-              "var_wp_url_len": len(os.environ.get("WP_URL", "")),
-              "dispatch_ssh_len": len(os.environ.get("DISPATCH_SSH", "")),
-              "dispatch_wp_len": len(os.environ.get("DISPATCH_WP", "")),
-            },
-          }
-          line = json.dumps(data)
-          with open(log_path, "a") as f:
-            f.write(line + "\n")
-          print("AGENT_DEBUG_738f4f " + line, flush=True)
-          PY
-          _slen="${#SECRET_HOST}"
-          _vlen="${#VAR_DEPLOY_HOST}"
-          _wlen="${#WP_URL}"
-          _dlen="${#DISPATCH_SSH}"
-          _pwlen="${#DISPATCH_WP}"
-          {
-            echo "## Debug 738f4f: SSH host resolution"
-            echo "| Source | char length |"
-            echo "|--------|------------|"
-            echo "| secrets.DEPLOY_HOST | ${_slen} (hidden) |"
-            echo "| vars.DEPLOY_HOST | ${_vlen} |"
-            echo "| vars.NEXT_PUBLIC_WORDPRESS_URL | ${_wlen} |"
-            echo "| workflow_dispatch ssh_host | ${_dlen} |"
-            echo "| workflow_dispatch wordpress_url | ${_pwlen} |"
-            echo ""
-            echo "If \`vars.*\` lengths are 0 but you set values under **Environments**, add \`environment: <name>\` to this job or move variables to **Repository** variables."
-          } >> "$GITHUB_STEP_SUMMARY"
-          #endregion
           H="${DISPATCH_SSH:-}"
           if [ -z "$H" ]; then
             H="${SECRET_HOST:-}"
@@ -230,11 +182,3 @@ jobs:
             pm2 delete mowby-frontend 2>/dev/null || true
             pm2 start npm --name mowby-frontend --cwd "$DEPLOY_PATH/frontend" -- start -- --skip-health-checks
             pm2 save
-
-      - name: Upload agent debug log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-session-738f4f
-          path: .cursor/debug-738f4f.log
-          if-no-files-found: ignore
