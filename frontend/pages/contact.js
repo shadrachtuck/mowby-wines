@@ -11,8 +11,8 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
 import { Textarea } from '../components/ui/Textarea';
-import { Card } from '../components/ui/Card';
 import { Mail, Send } from 'lucide-react';
 
 function applyEmailTemplate(str, email) {
@@ -115,54 +115,60 @@ export default function ContactPage(props) {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative"
             >
-              <Card className="p-8 bg-white">
+              <div className="w-full max-w-[420px] mx-auto flex flex-col gap-2">
                 {!submitted ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label
+                        <Label
                           htmlFor="name"
-                          className="block text-sm font-medium text-gray-700 mb-2"
+                          className="text-sm font-sans font-medium text-gray-700 mb-2 block"
                         >
                           {nameLabel}
-                        </label>
+                        </Label>
                         <Input
                           type="text"
                           id="name"
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
+                          autoComplete="name"
                           required
+                          aria-required="true"
+                          className="w-full"
                           placeholder={namePlaceholder}
                         />
                       </div>
 
                       <div>
-                        <label
+                        <Label
                           htmlFor="email"
-                          className="block text-sm font-medium text-gray-700 mb-2"
+                          className="text-sm font-sans font-medium text-gray-700 mb-2 block"
                         >
                           {emailLabel}
-                        </label>
+                        </Label>
                         <Input
                           type="email"
                           id="email"
                           name="email"
                           value={formData.email}
                           onChange={handleChange}
+                          autoComplete="email"
                           required
+                          aria-required="true"
+                          className="w-full"
                           placeholder={emailPlaceholder}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label
+                      <Label
                         htmlFor="subject"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="text-sm font-sans font-medium text-gray-700 mb-2 block"
                       >
                         {subjectLabel}
-                      </label>
+                      </Label>
                       <Input
                         type="text"
                         id="subject"
@@ -170,23 +176,26 @@ export default function ContactPage(props) {
                         value={formData.subject}
                         onChange={handleChange}
                         required
+                        aria-required="true"
+                        className="w-full"
                         placeholder={subjectPlaceholder}
                       />
                     </div>
 
                     <div>
-                      <label
+                      <Label
                         htmlFor="message"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="text-sm font-sans font-medium text-gray-700 mb-2 block"
                       >
                         {messageLabel}
-                      </label>
+                      </Label>
                       <Textarea
                         id="message"
                         name="message"
                         value={formData.message}
                         onChange={handleChange}
                         required
+                        aria-required="true"
                         rows={6}
                         placeholder={messagePlaceholder}
                         className="w-full resize-none"
@@ -195,10 +204,8 @@ export default function ContactPage(props) {
 
                     <Button
                       type="submit"
-                      size="lg"
-                      className="w-full rounded-full"
+                      className="w-full min-h-11 h-auto rounded-xl px-4 py-2.5 font-sans font-semibold text-base"
                     >
-                      <Send className="w-5 h-5 mr-2 inline" />
                       {submitLabel}
                     </Button>
                   </form>
@@ -237,13 +244,13 @@ export default function ContactPage(props) {
                         });
                       }}
                       variant="secondary"
-                      className="rounded-full"
+                      className="w-full min-h-11 h-auto rounded-xl px-4 py-2.5 font-sans font-semibold text-base"
                     >
                       {sendAnotherLabel}
                     </Button>
                   </motion.div>
                 )}
-              </Card>
+              </div>
 
               <div className="absolute -bottom-12 -left-8">
                 <DecorativeFish variant="green" size="lg" />
