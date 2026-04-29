@@ -204,10 +204,14 @@ jobs:
               printf '%s\n' "NEXT_PUBLIC_WORDPRESS_URL=${NEXT_PUBLIC_WORDPRESS_URL}"
             } > frontend/.env.local
             WP_DOCROOT="${DEPLOY_PATH}/app/public"
-            GQ_URL="${NEXT_PUBLIC_WORDPRESS_URL%/}/index.php?graphql"
+            WP_CLI_URL="${NEXT_PUBLIC_WORDPRESS_URL%/}"
+            GQ_URL="${WP_CLI_URL}/index.php?graphql"
             probe_graphql() {
               GQ_TMP="$(mktemp)"
-              if ! curl -sS -m 45 -o "$GQ_TMP" -w '' -H 'Content-Type: application/json' \
+              # -L follows redirects; GraphQL must return JSON (WP may emit HTML/warnings if misconfigured).
+              if ! curl -sS -L -m 45 -o "$GQ_TMP" -w '' \
+                -H 'Content-Type: application/json' \
+                -H 'Accept: application/json' \
                 -d '{"query":"{ __typename }"}' "$GQ_URL"; then
                 echo "Could not reach GraphQL at $GQ_URL (curl failed)." >&2
                 rm -f "$GQ_TMP"
@@ -216,6 +220,14 @@ jobs:
               if grep -qiE 'wp-core-ui|Welcome to WordPress\. Before getting started|<!DOCTYPE[[:space:]]+html' "$GQ_TMP" 2>/dev/null; then
                 echo "GraphQL URL returned WordPress installer HTML, not JSON. Install WordPress and WPGraphQL first." >&2
                 echo "URL was: $GQ_URL" >&2
+                rm -f "$GQ_TMP"
+                return 1
+              fi
+              if grep -qiE 'PHP (Warning|Fatal error|Parse error)' "$GQ_TMP" 2>/dev/null; then
+                echo "GraphQL body contains PHP errors (display_errors may be on). Body (first 600 chars):" >&2
+                head -c 600 "$GQ_TMP" >&2 || true
+                echo >&2
+                echo "Turn off display_errors for production PHP, or fix the underlying PHP notice." >&2
                 rm -f "$GQ_TMP"
                 return 1
               fi
@@ -236,7 +248,7 @@ jobs:
                 WP_CLI=(wp)
               fi
               WP_DIAG="$(mktemp)"
-              if "${WP_CLI[@]}" core is-installed --path="$WP_DOCROOT" 2>"$WP_DIAG"; then
+              if "${WP_CLI[@]}" core is-installed --path="$WP_DOCROOT" --url="$WP_CLI_URL" 2>"$WP_DIAG"; then
                 rm -f "$WP_DIAG"
               else
                 echo "wp core is-installed failed for $WP_DOCROOT. wp-cli messages:" >&2
