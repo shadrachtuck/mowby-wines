@@ -266,6 +266,25 @@ jobs:
                 exit 1
               fi
             fi
+            # Full GraphQL schema for Next static generation: active child theme (ACF rules), ACF + WPGraphQL + WPGraphQL for ACF + Faust.
+            if command -v wp >/dev/null 2>&1; then
+              if [ "$(id -u)" -eq 0 ]; then
+                WP_CLI=(wp --allow-root)
+              else
+                WP_CLI=(wp)
+              fi
+              echo "Ensuring WordPress theme and headless plugins are active..." >&2
+              if ! "${WP_CLI[@]}" theme activate mowby-wines --path="$WP_DOCROOT" --url="$WP_CLI_URL"; then
+                echo "theme activate mowby-wines failed (parent theme missing or path wrong?). Fix WP before deploy." >&2
+                exit 1
+              fi
+              if ! "${WP_CLI[@]}" plugin activate advanced-custom-fields-pro wp-graphql wpgraphql-acf faustwp \
+                --path="$WP_DOCROOT" --url="$WP_CLI_URL"; then
+                echo "plugin activate failed. Required: advanced-custom-fields-pro, wp-graphql, wpgraphql-acf, faustwp." >&2
+                echo "Run: ${WP_CLI[*]} plugin list --path=\"$WP_DOCROOT\" --status=inactive" >&2
+                exit 1
+              fi
+            fi
             cd frontend
             export NPM_CONFIG_MAXSOCKETS=5
             npm ci --no-audit --no-fund

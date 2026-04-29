@@ -45,6 +45,21 @@ function mowby_wines_wpgraphql_acf_match_mowby_page_slug( $field_group_name, $pa
 add_action( 'wpgraphql/acf/match_location_rule', 'mowby_wines_wpgraphql_acf_match_mowby_page_slug', 10, 5 );
 
 add_action(
+	'after_setup_theme',
+	function () {
+		// Align with FaustWP default Headless menu labels ("Primary, Footer" → keys primary, footer).
+		// Ensures MenuLocationEnum includes PRIMARY + FOOTER for WPGraphQL even before Faust settings are saved.
+		register_nav_menus(
+			array(
+				'primary' => __( 'Primary', 'mowby-wines' ),
+				'footer'  => __( 'Footer', 'mowby-wines' ),
+			)
+		);
+	},
+	20
+);
+
+add_action(
 	'after_switch_theme',
 	function () {
 		wp_clean_themes_cache();
